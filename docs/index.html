@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="ParetoSkill evolves transferable agent skills under accuracy, transfer, cost, and regression objectives."
+    />
+    <title>ParetoSkill</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="ParetoSkill home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>ParetoSkill</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#idea">Idea</a>
+        <a href="#method">Method</a>
+        <a href="#evaluation">Evaluation</a>
+        <a href="#status">Status</a>
+        <a id="repo-link" class="nav-cta" href="https://github.com/DakeBU/ParetoSkill">Code</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="eyebrow">Transferable agent skills · Multi-objective evolution</div>
+        <h1>One skill version is rarely best for every deployment.</h1>
+        <p class="hero-copy">
+          ParetoSkill evolves trajectory-grounded patches into an auditable portfolio of
+          agent skills, balancing accuracy, cross-target transfer, token cost, and the risk
+          of breaking behavior that already works.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/DakeBU/ParetoSkill">Explore the code</a>
+          <a class="button secondary" href="#method">See the method</a>
+        </div>
+        <div class="status-line" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          Method and evaluation protocol drafted · Experiments in progress
+        </div>
+      </section>
+
+      <section id="idea" class="section split">
+        <div>
+          <p class="section-label">Research question</p>
+          <h2>How should reusable skills evolve when improvements can also regress?</h2>
+        </div>
+        <div class="prose">
+          <p>
+            A patch can repair failures on its source task yet add context cost, break a
+            previously solved task, or fail under another model, harness, or domain.
+            Selecting only by source validation accuracy hides these deployment trade-offs.
+          </p>
+          <p>
+            ParetoSkill treats each version as a multi-target, multi-objective candidate and
+            preserves the useful non-dominated alternatives instead of collapsing them into
+            one fixed utility score.
+          </p>
+        </div>
+      </section>
+
+      <section class="objectives" aria-labelledby="objectives-title">
+        <div class="section-heading">
+          <p class="section-label">Optimization objectives</p>
+          <h2 id="objectives-title">A deployment-facing frontier</h2>
+        </div>
+        <div class="card-grid">
+          <article class="metric-card">
+            <span class="metric-index">01</span>
+            <h3>ID accuracy</h3>
+            <p>Success on held-out tasks from the source distribution.</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-index">02</span>
+            <h3>Worst-target transfer</h3>
+            <p>Robustness across model, harness, and out-of-domain groups.</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-index">03</span>
+            <h3>Token cost</h3>
+            <p>Skill injection and execution overhead measured per task.</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-index">04</span>
+            <h3>Paired regression</h3>
+            <p>The chance that a candidate breaks a task solved by the base skill.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="method" class="section method-section">
+        <div class="section-heading">
+          <p class="section-label">Method</p>
+          <h2>Evidence in, auditable frontier out</h2>
+        </div>
+        <div class="pipeline" aria-label="ParetoSkill method pipeline">
+          <article>
+            <span>1</span>
+            <h3>Trace-grounded patches</h3>
+            <p>Generate add, drop, rewrite, and compress operations with supporting evidence.</p>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+          <article>
+            <span>2</span>
+            <h3>Paired evaluation</h3>
+            <p>Run candidates and the base skill on matched task–seed blocks and targets.</p>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+          <article>
+            <span>3</span>
+            <h3>Uncertain dominance</h3>
+            <p>Use pessimistic confidence bounds for archive admission and feasibility.</p>
+          </article>
+          <div class="connector" aria-hidden="true">→</div>
+          <article>
+            <span>4</span>
+            <h3>Frontier-guided search</h3>
+            <p>Condition new mutations on sparse or weak regions of the current archive.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="evaluation" class="section split evaluation">
+        <div>
+          <p class="section-label">Evaluation</p>
+          <h2>Designed to make the narrower claim falsifiable.</h2>
+        </div>
+        <div class="check-list">
+          <div><span>✓</span> Matched candidate-evaluation budgets across baselines</div>
+          <div><span>✓</span> Spreadsheet tasks plus out-of-distribution table reasoning</div>
+          <div><span>✓</span> Heterogeneous model and agent-harness targets</div>
+          <div><span>✓</span> Frontier quality, false admissions, and paired regressions</div>
+          <div><span>✓</span> Passive-archive and uncertainty-aware ablations</div>
+        </div>
+      </section>
+
+      <section id="status" class="section status-panel">
+        <div>
+          <p class="section-label">Project status</p>
+          <h2>Protocol first. Results only after execution.</h2>
+        </div>
+        <p>
+          The paper draft currently specifies the formulation, algorithm, baselines, and
+          result shells. Empirical cells remain intentionally blank until experiments are
+          run and verified. Code and reproducibility materials will be released here as
+          they mature.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <span>ParetoSkill · ICLR 2027 research project</span>
+      <a href="https://github.com/DakeBU/ParetoSkill">GitHub</a>
+    </footer>
+  </body>
+</html>
+

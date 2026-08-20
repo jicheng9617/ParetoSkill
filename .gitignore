@@ -1,0 +1,38 @@
+# Research manuscripts and private source material stay outside GitHub.
+/paper/
+/tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Experiments and model artifacts
+outputs/
+runs/
+wandb/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

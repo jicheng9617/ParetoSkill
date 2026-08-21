@@ -1,0 +1,1084 @@
+schema_version: "1.0"
+
+experiment:
+  id: paretoskill-iclr2027-v1
+  config_version: 1
+  title: Regression-aware multi-objective evolution of transferable agent skills
+  mode: dry-run
+  freeze_status: structural_protocol_only
+  primary_benchmark: spreadsheetbench_verified
+  minimum_search_seeds: 3
+  notes: >-
+    This manifest freezes the intended ICLR 2027 comparison. Real model revisions,
+    data manifests, prices, and deployment thresholds remain explicit environment
+    placeholders and must be resolved before a non-dry run.
+
+runtime_profiles:
+  dry_run:
+    provider_override: mock
+    data_adapter: builtin_synthetic_fixture
+    resolve_external_placeholders: false
+    network: false
+    synthetic_only_values:
+      accuracy_tolerance: 0.05
+      token_budget: 4096
+      archive_capacity: 32
+      final_task_executions: 600
+      results_root: runs/dry-run
+  replay:
+    provider_override: replay
+    data_adapter: replay_manifest
+    resolve_external_placeholders: false
+    network: false
+  real:
+    provider_override: disabled_external
+    data_adapter: configured_manifests
+    resolve_external_placeholders: true
+    network: false
+    preflight_action: reject_checked_in_manifest
+    requires_new_versioned_manifest: true
+    required_experiment_mode_in_new_manifest: real
+    required_network_value_in_new_manifest: true
+    todo: >-
+      Copy to a new manifest ID, set a coherent real mode/network/provider configuration,
+      install a reviewed adapter, and obtain explicit authorization. This checked-in file
+      must never become an online manifest in place.
+
+safety:
+  offline_by_default: true
+  allow_network: false
+  required_network_env: PARETOSKILL_ENABLE_NETWORK
+  required_network_value: "I_UNDERSTAND_EXTERNAL_CALLS_MAY_COST_MONEY"
+  fail_if_external_provider_unresolved: true
+  fail_if_data_placeholder_unresolved: true
+  placeholder_failure_scope: real_profile_only
+  forbid_implicit_provider_fallback: true
+  forbid_api_calls_in_dry_run: true
+  allowed_dry_run_providers:
+    - mock
+    - replay
+
+reproducibility:
+  experiment_id_strategy: sha256_canonical_resolved_content_pinned_manifest
+  reject_path_only_identity: true
+  require_sha256_or_immutable_revision_for_external_inputs: true
+  digest_verification: recompute_from_local_bytes_and_fail_on_mismatch_before_real_run
+  identity_inputs:
+    - task_manifest_digests
+    - dataset_release_revisions
+    - base_skill_content_digest
+    - trace_store_digest
+    - patch_pool_digest
+    - verifier_adapter_digest
+    - provider_adapter_digest
+    - harness_adapter_digest
+    - proposer_prompt_digest
+    - materializer_revision_digest
+    - dependency_lock_digest
+    - sandbox_image_digest
+    - execution_backend_digest
+  dependency_lock:
+    path: "${PARETOSKILL_DEPENDENCY_LOCK_PATH}"
+    sha256: "${PARETOSKILL_DEPENDENCY_LOCK_SHA256}"
+  execution_environment:
+    serving_backend: "${PARETOSKILL_SERVING_BACKEND}"
+    serving_backend_revision: "${PARETOSKILL_SERVING_BACKEND_REVISION}"
+    serving_backend_sha256: "${PARETOSKILL_SERVING_BACKEND_SHA256}"
+    hardware: "${PARETOSKILL_HARDWARE_DESCRIPTION}"
+    driver_runtime: "${PARETOSKILL_DRIVER_RUNTIME}"
+    deterministic_kernel_policy: "${PARETOSKILL_DETERMINISTIC_KERNEL_POLICY}"
+
+providers:
+  mock:
+    kind: mock
+    enabled: true
+    network: false
+    price:
+      input_per_million_tokens: 0.0
+      output_per_million_tokens: 0.0
+      currency: USD
+  replay:
+    kind: replay
+    enabled: true
+    network: false
+    replay_path: "${PARETOSKILL_REPLAY_PATH}"
+    price:
+      input_per_million_tokens: 0.0
+      output_per_million_tokens: 0.0
+      currency: USD
+  disabled_external:
+    kind: external_protocol
+    enabled: false
+    network: true
+    adapter: "${PARETOSKILL_EXTERNAL_PROVIDER_ADAPTER}"
+    adapter_revision: "${PARETOSKILL_EXTERNAL_PROVIDER_ADAPTER_REVISION}"
+    adapter_sha256: "${PARETOSKILL_EXTERNAL_PROVIDER_ADAPTER_SHA256}"
+    api_key_env: PARETOSKILL_PROVIDER_API_KEY
+    base_url: "${PARETOSKILL_PROVIDER_BASE_URL}"
+    price:
+      input_per_million_tokens: "${PARETOSKILL_INPUT_PRICE_PER_MILLION}"
+      output_per_million_tokens: "${PARETOSKILL_OUTPUT_PRICE_PER_MILLION}"
+      currency: "${PARETOSKILL_PRICE_CURRENCY}"
+      source_url: "${PARETOSKILL_PRICE_SOURCE_URL}"
+      retrieved_at_utc: "${PARETOSKILL_PRICE_RETRIEVED_AT_UTC}"
+    todo: Freeze a real provider adapter and dated public price source before the first main run.
+
+models:
+  skill_author:
+    provider: disabled_external
+    model_id: "${PARETOSKILL_AUTHOR_MODEL_ID}"
+    revision: "${PARETOSKILL_AUTHOR_MODEL_REVISION}"
+    role: proposer
+    decoding:
+      temperature: 0.0
+      top_p: 1.0
+      max_output_tokens: "${PARETOSKILL_AUTHOR_MAX_OUTPUT_TOKENS}"
+  skill_user_small:
+    provider: disabled_external
+    model_id: "${PARETOSKILL_USER_SMALL_MODEL_ID}"
+    revision: "${PARETOSKILL_USER_SMALL_MODEL_REVISION}"
+    role: evaluator
+    family_partition: source_family
+    decoding:
+      temperature: 0.0
+      top_p: 1.0
+      max_output_tokens: "${PARETOSKILL_USER_MAX_OUTPUT_TOKENS}"
+  skill_user_large:
+    provider: disabled_external
+    model_id: "${PARETOSKILL_USER_LARGE_MODEL_ID}"
+    revision: "${PARETOSKILL_USER_LARGE_MODEL_REVISION}"
+    role: evaluator
+    family_partition: source_family
+    decoding:
+      temperature: 0.0
+      top_p: 1.0
+      max_output_tokens: "${PARETOSKILL_USER_MAX_OUTPUT_TOKENS}"
+  heldout_family:
+    provider: disabled_external
+    model_id: "${PARETOSKILL_HELDOUT_MODEL_ID}"
+    revision: "${PARETOSKILL_HELDOUT_MODEL_REVISION}"
+    role: final_transfer_only
+    family_partition: heldout_family
+    decoding:
+      temperature: 0.0
+      top_p: 1.0
+      max_output_tokens: "${PARETOSKILL_USER_MAX_OUTPUT_TOKENS}"
+
+harnesses:
+  spreadsheet_primary:
+    adapter: "${PARETOSKILL_SPREADSHEET_HARNESS_ADAPTER}"
+    repository_revision: "${PARETOSKILL_SPREADSHEET_HARNESS_REVISION}"
+    adapter_sha256: "${PARETOSKILL_SPREADSHEET_HARNESS_SHA256}"
+    max_tool_steps: "${PARETOSKILL_MAX_TOOL_STEPS}"
+    sandbox_image: "${PARETOSKILL_SANDBOX_IMAGE}"
+    sandbox_image_digest: "${PARETOSKILL_SANDBOX_IMAGE_DIGEST}"
+  spreadsheet_alternate:
+    adapter: "${PARETOSKILL_ALTERNATE_HARNESS_ADAPTER}"
+    repository_revision: "${PARETOSKILL_ALTERNATE_HARNESS_REVISION}"
+    adapter_sha256: "${PARETOSKILL_ALTERNATE_HARNESS_SHA256}"
+    max_tool_steps: "${PARETOSKILL_MAX_TOOL_STEPS}"
+    sandbox_image: "${PARETOSKILL_SANDBOX_IMAGE}"
+    sandbox_image_digest: "${PARETOSKILL_SANDBOX_IMAGE_DIGEST}"
+    todo: Freeze only after the alternate harness reproduces its documented base ordering.
+
+domains:
+  spreadsheet_verified:
+    task_type: spreadsheet_manipulation
+    adapter: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER}"
+    adapter_revision: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER_REVISION}"
+    adapter_sha256: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER_SHA256}"
+  spreadsheet_full:
+    task_type: spreadsheet_manipulation
+    adapter: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER}"
+    adapter_revision: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER_REVISION}"
+    adapter_sha256: "${PARETOSKILL_SPREADSHEET_DOMAIN_ADAPTER_SHA256}"
+  wikitablequestions_converted:
+    task_type: table_question_answering
+    adapter: "${PARETOSKILL_WTQ_DOMAIN_ADAPTER}"
+    adapter_revision: "${PARETOSKILL_WTQ_DOMAIN_ADAPTER_REVISION}"
+    adapter_sha256: "${PARETOSKILL_WTQ_DOMAIN_ADAPTER_SHA256}"
+  hitab_converted:
+    task_type: hierarchical_table_reasoning
+    adapter: "${PARETOSKILL_HITAB_DOMAIN_ADAPTER}"
+    adapter_revision: "${PARETOSKILL_HITAB_DOMAIN_ADAPTER_REVISION}"
+    adapter_sha256: "${PARETOSKILL_HITAB_DOMAIN_ADAPTER_SHA256}"
+
+datasets:
+  spreadsheetbench_verified:
+    root: "${PARETOSKILL_SPREADSHEETBENCH_VERIFIED_ROOT}"
+    manifest: "${PARETOSKILL_SPREADSHEETBENCH_VERIFIED_MANIFEST}"
+    release_revision: "${PARETOSKILL_SPREADSHEETBENCH_VERIFIED_REVISION}"
+    manifest_sha256: "${PARETOSKILL_SPREADSHEETBENCH_VERIFIED_MANIFEST_SHA256}"
+    canonical_task_id_namespace: spreadsheetbench
+    total_tasks: 400
+  spreadsheetbench_full:
+    root: "${PARETOSKILL_SPREADSHEETBENCH_FULL_ROOT}"
+    manifest: "${PARETOSKILL_SPREADSHEETBENCH_FULL_MANIFEST}"
+    release_revision: "${PARETOSKILL_SPREADSHEETBENCH_FULL_REVISION}"
+    manifest_sha256: "${PARETOSKILL_SPREADSHEETBENCH_FULL_MANIFEST_SHA256}"
+    canonical_task_id_namespace: spreadsheetbench
+    total_tasks: null
+    todo: Resolve the exact released test manifest and task count before real execution.
+  wikitablequestions_converted:
+    root: "${PARETOSKILL_WTQ_ROOT}"
+    manifest: "${PARETOSKILL_WTQ_MANIFEST}"
+    release_revision: "${PARETOSKILL_WTQ_CONVERSION_REVISION}"
+    manifest_sha256: "${PARETOSKILL_WTQ_MANIFEST_SHA256}"
+    canonical_task_id_namespace: wikitablequestions
+    total_tasks: null
+    todo: Resolve search/test conversion manifests without overlapping task IDs.
+  hitab_converted:
+    root: "${PARETOSKILL_HITAB_ROOT}"
+    manifest: "${PARETOSKILL_HITAB_MANIFEST}"
+    release_revision: "${PARETOSKILL_HITAB_CONVERSION_REVISION}"
+    manifest_sha256: "${PARETOSKILL_HITAB_MANIFEST_SHA256}"
+    canonical_task_id_namespace: hitab
+    total_tasks: null
+    todo: Resolve search/test conversion manifests without overlapping task IDs.
+
+splits:
+  evolution_trace:
+    dataset: spreadsheetbench_verified
+    source_partition: evolution
+    expected_count: 160
+    use: trace_collection_and_patch_generation
+    manifest: "${PARETOSKILL_EVOLUTION_TRACE_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_EVOLUTION_TRACE_MANIFEST_SHA256}"
+    test_access: false
+  id_validation:
+    dataset: spreadsheetbench_verified
+    source_partition: evolution
+    expected_count: 40
+    use: search_and_selection
+    manifest: "${PARETOSKILL_ID_VALIDATION_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_ID_VALIDATION_MANIFEST_SHA256}"
+    disjoint_from:
+      - evolution_trace
+      - heldout_verified
+    test_access: false
+  heldout_verified:
+    dataset: spreadsheetbench_verified
+    source_partition: heldout
+    expected_count: 200
+    use: final_evaluation_only
+    manifest: "${PARETOSKILL_HELDOUT_VERIFIED_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_HELDOUT_VERIFIED_MANIFEST_SHA256}"
+    disjoint_from:
+      - evolution_trace
+      - id_validation
+    test_access: true
+  wtq_transfer_validation:
+    dataset: wikitablequestions_converted
+    expected_count: 40
+    use: search_transfer_stratum
+    manifest: "${PARETOSKILL_WTQ_VALIDATION_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_WTQ_VALIDATION_MANIFEST_SHA256}"
+    disjoint_from:
+      - wtq_untouched_test
+    test_access: false
+  wtq_untouched_test:
+    dataset: wikitablequestions_converted
+    expected_count: null
+    use: final_evaluation_only
+    manifest: "${PARETOSKILL_WTQ_TEST_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_WTQ_TEST_MANIFEST_SHA256}"
+    test_access: true
+  hitab_transfer_validation:
+    dataset: hitab_converted
+    expected_count: 40
+    use: search_transfer_stratum
+    manifest: "${PARETOSKILL_HITAB_VALIDATION_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_HITAB_VALIDATION_MANIFEST_SHA256}"
+    disjoint_from:
+      - hitab_untouched_test
+    test_access: false
+  hitab_untouched_test:
+    dataset: hitab_converted
+    expected_count: null
+    use: final_evaluation_only
+    manifest: "${PARETOSKILL_HITAB_TEST_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_HITAB_TEST_MANIFEST_SHA256}"
+    test_access: true
+  spreadsheetbench_full_test:
+    dataset: spreadsheetbench_full
+    expected_count: null
+    use: final_evaluation_only
+    manifest: "${PARETOSKILL_SPREADSHEETBENCH_FULL_TEST_MANIFEST}"
+    manifest_sha256: "${PARETOSKILL_SPREADSHEETBENCH_FULL_TEST_MANIFEST_SHA256}"
+    overlap_with_verified: allowed_only_via_canonical_task_identity
+    reuse_identical_verified_execution: true
+    report_separately_from_verified: true
+    forbid_double_weighting_in_pooled_metrics: true
+    required_overlap_strata:
+      - evolution_trace_seen
+      - id_validation_seen
+      - heldout_verified
+      - full_collection_only
+    test_access: true
+
+task_seed_blocks:
+  outcome_cache_keys:
+    - split_id
+    - canonical_task_id
+    - target_id
+    - execution_seed
+  archive_bootstrap_cluster_keys:
+    - split_id
+    - canonical_task_id
+    - execution_seed
+  archive_bootstrap_retain_all_targets_in_cluster: true
+  archive_bootstrap_strata:
+    - split_id
+    - transfer_group
+  final_comparison_cluster_keys:
+    - dataset_id
+    - canonical_task_id
+  final_comparison_retain_all_execution_seeds: true
+  final_comparison_retain_compatible_targets: true
+  paired_against_base: true
+  shared_across_candidates: true
+  shared_across_methods: true
+  assignment: stable_hash_then_lexicographic
+  assignment_hash: sha256
+  assignment_salt: paretoskill-iclr2027-screen-v1
+  screen_execution_seeds:
+    - 17
+  search_seeds:
+    - 104729
+    - 130363
+    - 155921
+  execution_seeds:
+    - 17
+    - 29
+    - 43
+  bootstrap_seed: 32452843
+  infrastructure_retry_uses_same_seed: true
+  retry_limit: 1
+  exclude_only_verified_infrastructure_failures: true
+  failure_taxonomy:
+    eligible_for_retry_and_exclusion:
+      - sandbox_start_failure
+      - provider_transport_failure_before_response
+      - harness_crash_before_agent_output
+      - verifier_infrastructure_failure
+    never_exclude_as_infrastructure:
+      - model_refusal
+      - invalid_agent_output
+      - tool_misuse
+      - task_timeout_after_valid_start
+      - verifier_assertion_failure
+    adjudication: verifier_confirmed_with_logged_raw_evidence
+    missing_failed_excluded_reported_separately: true
+
+targets:
+  id_small_primary:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: spreadsheet_verified
+    split: id_validation
+    phase: search
+    transfer_group: null
+  cross_scale_large:
+    model: skill_user_large
+    harness: spreadsheet_primary
+    domain: spreadsheet_verified
+    split: id_validation
+    phase: search
+    transfer_group: model_scale
+  cross_harness_small:
+    model: skill_user_small
+    harness: spreadsheet_alternate
+    domain: spreadsheet_verified
+    split: id_validation
+    phase: search
+    transfer_group: harness
+  ood_wtq_small:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: wikitablequestions_converted
+    split: wtq_transfer_validation
+    phase: search
+    transfer_group: domain_wtq
+  ood_hitab_small:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: hitab_converted
+    split: hitab_transfer_validation
+    phase: search
+    transfer_group: domain_hitab
+  final_verified_small:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: spreadsheet_verified
+    split: heldout_verified
+    phase: final_only
+    transfer_group: source_heldout
+    aggregation_role: primary_verified_report
+  final_verified_large:
+    model: skill_user_large
+    harness: spreadsheet_primary
+    domain: spreadsheet_verified
+    split: heldout_verified
+    phase: final_only
+    transfer_group: model_scale
+  final_verified_heldout_family:
+    model: heldout_family
+    harness: spreadsheet_primary
+    domain: spreadsheet_verified
+    split: heldout_verified
+    phase: final_only
+    transfer_group: heldout_model_family
+  final_verified_alternate_harness:
+    model: skill_user_small
+    harness: spreadsheet_alternate
+    domain: spreadsheet_verified
+    split: heldout_verified
+    phase: final_only
+    transfer_group: harness
+  final_spreadsheetbench_full:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: spreadsheet_full
+    split: spreadsheetbench_full_test
+    phase: final_only
+    transfer_group: expanded_source
+    aggregation_role: separate_full_collection_report
+    exclude_from_primary_pooled_metrics: true
+    reuse_verified_execution_when_canonical_keys_match: true
+    report_seen_and_unseen_overlap_strata_separately: true
+  final_wtq:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: wikitablequestions_converted
+    split: wtq_untouched_test
+    phase: final_only
+    transfer_group: domain_wtq
+  final_hitab:
+    model: skill_user_small
+    harness: spreadsheet_primary
+    domain: hitab_converted
+    split: hitab_untouched_test
+    phase: final_only
+    transfer_group: domain_hitab
+
+objectives:
+  id_accuracy:
+    enabled: true
+    direction: maximize
+    estimator: mean_binary_success
+    target_ids:
+      - id_small_primary
+    pessimistic_bound: lower
+  worst_target_transfer:
+    enabled: true
+    direction: maximize
+    estimator: minimum_group_mean_binary_success
+    target_ids:
+      - cross_scale_large
+      - cross_harness_small
+      - ood_wtq_small
+      - ood_hitab_small
+    pessimistic_bound: lower
+  token_cost:
+    enabled: true
+    direction: minimize
+    estimator: mean_input_plus_output_tokens
+    include_skill_injection_tokens: true
+    include_agent_trajectory_tokens: true
+    target_ids:
+      - id_small_primary
+      - cross_scale_large
+      - cross_harness_small
+      - ood_wtq_small
+      - ood_hitab_small
+    pessimistic_bound: upper
+  paired_regression:
+    enabled: true
+    direction: minimize
+    estimator: conditional_pass_to_fail_rate
+    condition: base_success_equals_one
+    zero_denominator: undefined
+    target_ids:
+      - id_small_primary
+      - cross_scale_large
+      - cross_harness_small
+      - ood_wtq_small
+      - ood_hitab_small
+    pessimistic_bound: upper
+
+constraints:
+  enabled: true
+  id_accuracy_floor:
+    expression: lcb(candidate_id_accuracy-base_id_accuracy) >= -epsilon
+    estimator: paired_candidate_minus_base_accuracy_delta
+    pairing_cluster_keys:
+      - split_id
+      - canonical_task_id
+      - execution_seed
+    candidate_target_id: id_small_primary
+    base_target_id: id_small_primary
+    epsilon: "${PARETOSKILL_ACCURACY_TOLERANCE}"
+    conservative_bound: true
+  token_budget:
+    expression: candidate_token_cost <= budget
+    budget: "${PARETOSKILL_TOKEN_BUDGET}"
+    conservative_bound: true
+  unresolved_constraint_action: fail_before_real_run
+
+statistics:
+  paired_design: true
+  archive_resampling_unit: split_task_seed_cluster
+  final_resampling_unit: dataset_task_cluster
+  interval_method: paired_stratified_bootstrap
+  bootstrap_replicates: 10000
+  minimum_effective_blocks_for_archive: 2
+  confidence_level: 0.95
+  one_sided_archive_bounds: true
+  benefit_bound: lower
+  cost_bound: upper
+  regression_bound: upper
+  dominance:
+    primary: pessimistic_bounds
+    weak_all_strict_one: true
+    feasibility_checked_before_dominance: true
+  heldout_comparisons:
+    interval: paired_two_sided_bootstrap
+    cluster: dataset_task
+    multiplicity_correction: holm
+    report_search_seed_distribution: true
+    require_all_declared_search_seeds: true
+    primary_endpoint: feasible_hypervolume_at_30000_logical_task_executions
+    holm_family:
+      contrast: paretoskill_vs_each_declared_matched_run
+      matched_run_ids:
+        - simple_patch_composition
+        - trace2skill_accuracy_subset
+        - fixed_scalarization_accuracy_only
+        - fixed_scalarization_accuracy_cost_equal
+        - fixed_scalarization_balanced_four_objective
+        - fixed_scalarization_ctx2skill_hard_easy_product
+        - evoskill_scalar_topk
+        - skillmoo_nsga2
+        - mocha_chebyshev_hvc
+        - passive_archive
+      secondary_metrics_are_exploratory: true
+  worst_group_sensitivity:
+    alternative: lower_tail_cvar
+    alpha: 0.25
+  hypervolume_reference:
+    source: frozen_base_and_no_skill_pilot
+    normalized_maximize_point:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+    manifest: "${PARETOSKILL_HV_REFERENCE_MANIFEST}"
+    freeze_before_method_comparison: true
+  false_admission_reference: full_validation_pessimistic_archive
+
+budgets:
+  accounting_unit: task_executions
+  matched_budget_uses_logical_executions: true
+  cross_method_cache_hit_consumes_logical_budget: true
+  physical_cache_savings_reported_separately: true
+  matched_across_search_methods: true
+  proposal_count_is_not_a_budget: true
+  screen:
+    task_executions: 40
+    tasks_per_target: 8
+    execution_seeds_per_task: 1
+    selected_execution_seeds:
+      - 17
+    selection_hash: sha256
+    selection_salt: paretoskill-iclr2027-screen-v1
+    target_ids:
+      - id_small_primary
+      - cross_scale_large
+      - cross_harness_small
+      - ood_wtq_small
+      - ood_hitab_small
+    early_stop: conservative_feasibility_impossible
+    early_stop_decision_timing: after_complete_40_execution_screen
+    is_subset_of_full_matrix: true
+  full:
+    task_executions: 600
+    task_executions_including_screen_subset: 600
+    incremental_task_executions_after_screen: 560
+    tasks_per_target: 40
+    execution_seeds_per_task: 3
+    target_ids:
+      - id_small_primary
+      - cross_scale_large
+      - cross_harness_small
+      - ood_wtq_small
+      - ood_hitab_small
+    promotion: feasible_or_confidence_boundary
+  search_total_per_method:
+    task_executions: 30000
+    maximum_unique_screened_candidates: 386
+    screen_allocation_task_executions: 15440
+    maximum_promoted_candidates: 26
+    incremental_promotion_allocation_task_executions: 14560
+    allocation_sum_check: 30000
+    primary_comparison_requires_exact_budget: true
+    unused_promotion_allocation_action: report_mark_run_incomplete_and_do_not_reassign_after_outcomes
+    budget_curve_task_executions:
+      - 7500
+      - 15000
+      - 22500
+      - 30000
+  final:
+    task_executions: "${PARETOSKILL_FINAL_TASK_EXECUTIONS}"
+    allocation: all_unique_manifest_task_target_seed_executions
+    canonical_execution_deduplication_keys:
+      - canonical_task_id
+      - model_revision
+      - harness_revision
+      - domain_adapter_revision
+      - verifier_revision
+      - execution_seed
+    reuse_verified_rows_in_full_collection_when_keys_match: true
+    report_verified_and_full_collection_separately: true
+    forbid_double_weighting_overlapping_tasks_in_pooled_metrics: true
+    candidates: frozen_archive_plus_baseline_outputs
+    final_target_ids:
+      - final_verified_small
+      - final_verified_large
+      - final_verified_heldout_family
+      - final_verified_alternate_harness
+      - final_spreadsheetbench_full
+      - final_wtq
+      - final_hitab
+    test_access_after_search_freeze_only: true
+    todo: Resolve from frozen final manifests; do not subsample after seeing outcomes.
+
+shared_search_controls:
+  base_skill: "${PARETOSKILL_BASE_SKILL_PATH}"
+  base_skill_sha256: "${PARETOSKILL_BASE_SKILL_SHA256}"
+  trace_store: "${PARETOSKILL_TRACE_STORE_PATH}"
+  trace_store_sha256: "${PARETOSKILL_TRACE_STORE_SHA256}"
+  patch_pool: "${PARETOSKILL_PATCH_POOL_PATH}"
+  patch_pool_sha256: "${PARETOSKILL_PATCH_POOL_SHA256}"
+  verifier: "${PARETOSKILL_VERIFIER_ADAPTER}"
+  verifier_revision: "${PARETOSKILL_VERIFIER_REVISION}"
+  verifier_sha256: "${PARETOSKILL_VERIFIER_SHA256}"
+  candidate_generator: common_evidence_grounded_generator
+  deterministic_materialization: true
+  materializer:
+    implementation: paretoskill_deterministic_materializer
+    version: paretoskill-materializer/v1
+    source_sha256: "${PARETOSKILL_MATERIALIZER_SHA256}"
+    prompt: none
+    canonicalization_version: paretoskill-canonical-v1
+    content_hash: sha256
+    patch_order:
+      - patch_sequence_ascending
+      - patch_id_lexicographic
+  content_hash_deduplication: true
+  reuse_cached_task_executions: true
+  static_gate_before_evaluation: true
+  patch_operations:
+    - add
+    - drop
+    - rewrite
+    - compress
+  initial_population:
+    - base
+    - validated_singletons
+    - full_merge
+    - simple_diverse_subsets
+    - compressed_variants
+
+proposer:
+  adapter: protocol_only
+  model: skill_author
+  enabled_in_dry_run: false
+  mock_mutations_in_dry_run: true
+  require_trace_evidence: true
+  require_parent_version: true
+  verifier_evidence_visible: true
+  evidence_context: objective_specific
+  parent_lineage_visible: true
+  ancestral_patch_history_visible: true
+  adapter_revision: "${PARETOSKILL_PROPOSER_ADAPTER_REVISION}"
+  adapter_sha256: "${PARETOSKILL_PROPOSER_ADAPTER_SHA256}"
+  prompt_template: "${PARETOSKILL_PROPOSER_PROMPT_PATH}"
+  prompt_sha256: "${PARETOSKILL_PROPOSER_PROMPT_SHA256}"
+  prompt_schema_version: paretoskill-proposer-v1
+  allowed_operations:
+    - add
+    - drop
+    - rewrite
+    - compress
+
+methods:
+  no_skill:
+    family: control
+    comparison_role: fixed_control
+    search: none
+    artifact: empty_skill
+  base_skill:
+    family: control
+    comparison_role: fixed_control
+    search: none
+    artifact: configured_base_skill
+  simple_patch_composition:
+    family: random_or_simple
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: seeded_bernoulli_patch_subsets
+    inclusion_probability: 0.5
+    force_nonempty_subset: true
+    rng_seed: search_seed
+    duplicate_tie_break: content_hash_lexicographic
+    maximum_consecutive_duplicate_proposals: 1000
+    selection: best_feasible_id_accuracy_then_tokens
+  trace2skill_all:
+    family: trace2skill_style
+    comparison_role: fixed_candidate_baseline
+    search: hierarchical_full_merge
+    consolidation_order: evidence_cluster_then_patch_id_lexicographic
+    conflict_resolution: shared_deterministic_materializer
+    selection: single_full_merge
+  trace2skill_accuracy_subset:
+    family: trace2skill_style
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: binary_patch_subset
+    optimizer_adapter: "${PARETOSKILL_BINARY_BO_ADAPTER}"
+    optimizer_adapter_revision: "${PARETOSKILL_BINARY_BO_ADAPTER_REVISION}"
+    optimizer_adapter_sha256: "${PARETOSKILL_BINARY_BO_ADAPTER_SHA256}"
+    optimizer_protocol:
+      surrogate: gaussian_process
+      kernel: matern_5_2
+      acquisition: expected_improvement
+      initial_design: 20_seeded_unique_bernoulli_half_subsets
+      batch_size: 1
+      rng_seed: search_seed
+      duplicate_policy: reject_and_resample
+      maximum_consecutive_duplicate_proposals: 1000
+    selection: id_accuracy_only
+    feasibility_gate_affects_reporting_not_scalar_score: true
+  fixed_scalarization:
+    family: scalar
+    comparison_role: independently_budgeted_matched_runs
+    search: common_candidates
+    objective_normalization: frozen_pilot_min_max
+    zero_range_normalized_value: 0.0
+    tie_break_order:
+      - higher_id_accuracy
+      - lower_paired_regression
+      - lower_token_cost
+      - content_hash_lexicographic
+    variants:
+      - id: accuracy_only
+        run_id: fixed_scalarization_accuracy_only
+        logical_task_execution_budget_per_search_seed: 30000
+        score: id_accuracy
+        maximize_space_weights:
+          - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+      - id: accuracy_cost_equal
+        run_id: fixed_scalarization_accuracy_cost_equal
+        logical_task_execution_budget_per_search_seed: 30000
+        score: 0.5*id_accuracy_normalized-0.5*token_cost_normalized
+        maximize_space_weights:
+          - 0.5
+          - 0.0
+          - 0.5
+          - 0.0
+      - id: balanced_four_objective
+        run_id: fixed_scalarization_balanced_four_objective
+        logical_task_execution_budget_per_search_seed: 30000
+        score: 0.25*id_accuracy_normalized+0.25*worst_transfer_normalized-0.25*token_cost_normalized-0.25*paired_regression_normalized
+        maximize_space_weights:
+          - 0.25
+          - 0.25
+          - 0.25
+          - 0.25
+      - id: ctx2skill_hard_easy_product
+        run_id: fixed_scalarization_ctx2skill_hard_easy_product
+        logical_task_execution_budget_per_search_seed: 30000
+        score: hard_probe_success_rate*easy_probe_success_rate
+        candidate_space: common_primary_spreadsheet_patch_candidates
+        task_statistic: base_mean_success_across_execution_seeds
+        hard_probe: bottom_quartile_base_task_statistic_on_id_validation
+        easy_probe: top_quartile_base_task_statistic_on_id_validation
+        tasks_per_probe: 10
+        tie_break: canonical_task_id_lexicographic
+        require_disjoint_probes: true
+        note: >-
+          Fixed-product Cross-Time Replay selection-rule adaptation on primary candidates;
+          CL-bench historical versions require a separate auxiliary manifest.
+  evoskill_scalar_topk:
+    family: evoskill_style
+    comparison_role: matched_style_adaptation
+    logical_task_execution_budget_per_search_seed: 30000
+    search: iterative_common_candidate_generation
+    admission: scalar_id_validation_score_top_k
+    scalar_score: id_accuracy
+    top_k: 26
+    top_k_rationale: fills the frozen 26-candidate full-promotion allocation under the matched 30000-execution budget
+    admission_tie_break: content_hash_lexicographic
+    final_selection: highest_scalar_score
+  skillmoo_nsga2:
+    family: skillmoo_adaptation
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: nsga2_over_patch_compositions
+    objectives: all_four
+    population_size: 20
+    offspring_size: 20
+    initialization: common_seeded_initial_population_then_seeded_unique_subsets
+    parent_selection: binary_tournament_rank_then_crowding
+    tournament_size: 2
+    crossover:
+      kind: uniform_binary
+      probability: 0.9
+      per_locus_parent_probability: 0.5
+    mutation:
+      kind: independent_bit_flip
+      per_locus_probability: reciprocal_patch_pool_size
+    elitism: parent_plus_offspring
+    generations: budget_limited
+    rng_seed: search_seed
+    tie_break: content_hash_lexicographic
+    survivor_selection: nondominated_sort_and_crowding_distance
+  mocha_chebyshev_hvc:
+    family: mocha_adaptation
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: chebyshev_annealing_over_common_candidates
+    objectives: all_four
+    objective_normalization: frozen_pilot_min_max
+    protocol:
+      weight_sampling: seeded_symmetric_dirichlet_over_four_objectives
+      dirichlet_alpha: 1.0
+      parent_selection: minimum_normalized_chebyshev_distance_to_ideal
+      exploration_metric: exact_hypervolume_contribution
+      acceptance_schedule: hvc_to_chebyshev_by_logical_budget_fraction
+      hvc_probability: exp(-annealing_rate*logical_budget_fraction)
+      annealing_rate: 4.0
+      chebyshev_acceptance: proposal_not_worse_than_best_incumbent_for_sampled_weights
+    rng_seed: search_seed
+    tie_break: content_hash_lexicographic
+  passive_archive:
+    family: pareto_control
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: common_unconditioned_candidate_stream
+    working_archive: bounded_pessimistic_nondominated
+    scientific_front: unbounded_reconstructed_pessimistic_nondominated
+    generation_conditioned_on_archive: false
+  paretoskill:
+    family: proposed
+    comparison_role: matched_search
+    logical_task_execution_budget_per_search_seed: 30000
+    search: archive_conditioned_patch_evolution
+    working_archive: bounded_pessimistic_nondominated
+    scientific_front: unbounded_reconstructed_pessimistic_nondominated
+    proposal_batch_size: 4
+    parent_selection:
+      rule: maximum_sparse_region_crowding_distance
+      preserve_objective_extremes: true
+      tie_break: content_hash_lexicographic
+    direction_selection:
+      rule: least_covered_normalized_objective_direction
+      tie_break_order:
+        - id_accuracy
+        - worst_target_transfer
+        - token_cost
+        - paired_regression
+    mutation_operator_selection:
+      initial_weights:
+        add: 0.25
+        drop: 0.25
+        rewrite: 0.25
+        compress: 0.25
+      tie_break_order:
+        - add
+        - drop
+        - rewrite
+        - compress
+      adaptation: none_in_primary_protocol
+    generation_conditioned_on_archive: true
+    proposer_predictions_used_as_scores: false
+
+ablations:
+  - id: no_uncertainty_bounds
+    base_method: paretoskill
+    overrides:
+      statistics.dominance.primary: point_estimates
+      statistics.one_sided_archive_bounds: false
+      constraints.id_accuracy_floor.conservative_bound: false
+      constraints.id_accuracy_floor.expression: point(candidate_id_accuracy-base_id_accuracy) >= -epsilon
+  - id: no_regression_objective
+    base_method: paretoskill
+    overrides:
+      objectives.paired_regression.enabled: false
+  - id: no_transfer_objective
+    base_method: paretoskill
+    overrides:
+      objectives.worst_target_transfer.enabled: false
+  - id: passive_archive
+    base_method: paretoskill
+    overrides:
+      methods.paretoskill.generation_conditioned_on_archive: false
+  - id: no_feasibility_gate
+    base_method: paretoskill
+    overrides:
+      constraints.enabled: false
+  - id: evidence_blind_generation
+    base_method: paretoskill
+    overrides:
+      proposer.evidence_context: failure_labels_only
+      proposer.verifier_evidence_visible: false
+    note: Evidence IDs remain recorded for audit; only proposer evidence is ablated.
+  - id: lineage_blind_generation
+    base_method: paretoskill
+    overrides:
+      proposer.parent_lineage_visible: false
+      proposer.ancestral_patch_history_visible: false
+    note: Lineage is still recorded for reproducibility but hidden from generation.
+  - id: patch_subset_only
+    base_method: paretoskill
+    overrides:
+      shared_search_controls.patch_operations:
+        - add
+        - drop
+
+metrics:
+  primary:
+    - id_accuracy
+    - worst_target_transfer
+    - token_cost
+    - paired_regression
+    - feasible_hypervolume
+  frontier:
+    - feasible_coverage
+    - additive_epsilon_indicator
+    - inverted_generational_distance_to_pooled_empirical_front
+    - scientific_front_size
+    - working_archive_size
+    - working_archive_churn
+    - archive_size
+    - archive_churn
+    - false_archive_admissions
+  efficiency:
+    - task_executions
+    - search_input_tokens
+    - search_output_tokens
+    - search_wall_clock_seconds
+    - deployment_token_cost
+    - break_even_reuse_count
+    - budget_curve_feasible_hypervolume
+  diagnostic:
+    - feasibility_rate
+    - repair_rate
+    - pass_to_fail_count
+    - failure_to_pass_count
+    - latency_seconds
+    - pairwise_objective_correlations
+    - fraction_nondominated
+    - operation_acceptance_by_type
+    - evidence_type_acceptance
+
+selection_protocol:
+  search_uses_final_splits: false
+  promote_screened_candidate_when:
+    - conservatively_feasible
+    - confidence_interval_crosses_feasibility_boundary
+    - potentially_nondominated_under_interval_overlap
+  working_archive:
+    role: bounded_online_search_state
+    admission:
+      require_conservative_feasibility: true
+      require_not_robustly_dominated: true
+      content_hash_deduplicate: true
+    capacity:
+      max_entries: "${PARETOSKILL_ARCHIVE_CAPACITY}"
+      overflow_policy: preserve_extremes_then_crowding_distance
+  scientific_front:
+    role: unbounded_reconstructed_scientific_output
+    reconstruct_from: every_fully_evaluated_candidate
+    capacity: null
+    require_conservative_feasibility: true
+    require_not_robustly_dominated: true
+    content_hash_deduplicate: true
+    compute_frontier_metrics_from_this_front: true
+  archive_admission:
+    compatibility_alias_for: working_archive.admission
+    require_conservative_feasibility: true
+    require_not_robustly_dominated: true
+    content_hash_deduplicate: true
+  archive_capacity:
+    compatibility_alias_for: working_archive.capacity
+    max_entries: "${PARETOSKILL_ARCHIVE_CAPACITY}"
+    overflow_policy: preserve_extremes_then_crowding_distance
+  stop_when:
+    - matched_task_execution_budget_exhausted
+  freeze_before_final:
+    - working_archive
+    - reconstructed_scientific_front
+    - baseline_selected_outputs
+    - normalization_constants
+    - hypervolume_reference
+    - deployment_policy_parameters
+
+deployment:
+  primary_policy: max_worst_transfer_under_token_budget
+  policies:
+    - id: min_tokens_subject_to_accuracy_floor
+      tune_on: validation_only
+    - id: max_worst_transfer_under_token_budget
+      token_budget: "${PARETOSKILL_TOKEN_BUDGET}"
+      tune_on: validation_only
+    - id: normalized_knee_point
+      normalization: frozen_validation_ranges
+      tune_on: validation_only
+  report_all_policies: true
+  never_tune_on_final_test: true
+  tie_break_order:
+    - lower_paired_regression
+    - lower_token_cost
+    - content_hash_lexicographic
+
+outputs:
+  root: "${PARETOSKILL_RESULTS_ROOT}"
+  experiment_id_strategy: sha256_canonical_resolved_content_pinned_manifest
+  include_git_state: true
+  runtime_metadata_capture:
+    mode: explicit_allowlist_only
+    fields:
+      - python_version
+      - operating_system
+      - architecture
+      - locale
+      - timezone
+      - process_start_utc
+    environment_variable_allowlist:
+      - PYTHONHASHSEED
+    dump_process_environment: false
+    heuristic_secret_redaction: false
+  write_task_level_outcomes: true
+  write_archive_snapshots: true
+  write_lineage: true
+  write_token_accounting: true
+  checkpoint_policy:
+    adaptive_methods: after_each_completed_ask_tell_batch
+    static_methods: per_execution_content_cache_plus_completed_method_checkpoint
+    root_contract: after_each_completed_invocation
+  resume_from_cache: true
+  required_files:
+    - resolved_manifest.yaml
+    - run_metadata.json
+    - task_outcomes.jsonl
+    - candidates.jsonl
+    - archive.json
+    - scientific_front.json
+    - lineage.jsonl
+    - metrics.json
+    - token_accounting.json
+    - checkpoint.json

@@ -10,6 +10,12 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+build/
+dist/
+*.egg-info/
+.coverage
+coverage.xml
+htmlcov/
 
 # Experiments and model artifacts
 outputs/
@@ -35,4 +41,3 @@ checkpoints/
 .vscode/
 .DS_Store
 Thumbs.db
-

@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paretoskill.local/schemas/experiment-manifest.schema.json",
+  "title": "ParetoSkill experiment manifest v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment",
+    "runtime_profiles",
+    "safety",
+    "reproducibility",
+    "providers",
+    "models",
+    "harnesses",
+    "domains",
+    "datasets",
+    "splits",
+    "task_seed_blocks",
+    "targets",
+    "objectives",
+    "constraints",
+    "statistics",
+    "budgets",
+    "shared_search_controls",
+    "proposer",
+    "methods",
+    "ablations",
+    "metrics",
+    "selection_protocol",
+    "deployment",
+    "outputs"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "experiment": {
+      "type": "object",
+      "required": ["id", "config_version", "mode", "minimum_search_seeds"]
+    },
+    "safety": {
+      "type": "object",
+      "required": [
+        "offline_by_default",
+        "allow_network",
+        "required_network_env",
+        "required_network_value",
+        "forbid_api_calls_in_dry_run"
+      ]
+    },
+    "runtime_profiles": {
+      "type": "object",
+      "required": ["dry_run", "replay", "real"],
+      "properties": {
+        "dry_run": {
+          "type": "object",
+          "required": ["provider_override", "data_adapter", "network"],
+          "properties": { "network": { "const": false } }
+        },
+        "replay": { "type": "object" },
+        "real": { "type": "object" }
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "required": [
+        "experiment_id_strategy",
+        "reject_path_only_identity",
+        "require_sha256_or_immutable_revision_for_external_inputs",
+        "identity_inputs"
+      ],
+      "properties": {
+        "reject_path_only_identity": { "const": true },
+        "require_sha256_or_immutable_revision_for_external_inputs": { "const": true },
+        "identity_inputs": { "type": "array", "minItems": 6, "uniqueItems": true }
+      }
+    },
+    "providers": { "type": "object", "minProperties": 2 },
+    "models": { "type": "object", "minProperties": 3 },
+    "harnesses": { "type": "object", "minProperties": 1 },
+    "domains": { "type": "object", "minProperties": 1 },
+    "datasets": { "type": "object", "minProperties": 1 },
+    "splits": { "type": "object", "minProperties": 3 },
+    "task_seed_blocks": {
+      "type": "object",
+      "required": [
+        "search_seeds",
+        "execution_seeds",
+        "shared_across_candidates",
+        "paired_against_base"
+      ]
+    },
+    "targets": { "type": "object", "minProperties": 5 },
+    "objectives": {
+      "type": "object",
+      "required": [
+        "id_accuracy",
+        "worst_target_transfer",
+        "token_cost",
+        "paired_regression"
+      ]
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["enabled", "id_accuracy_floor", "token_budget"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "id_accuracy_floor": {
+          "type": "object",
+          "required": ["expression", "epsilon", "conservative_bound"]
+        },
+        "token_budget": {
+          "type": "object",
+          "required": ["expression", "budget", "conservative_bound"]
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "required": [
+        "paired_design",
+        "bootstrap_replicates",
+        "minimum_effective_blocks_for_archive",
+        "confidence_level",
+        "dominance"
+      ],
+      "properties": {
+        "paired_design": { "const": true },
+        "bootstrap_replicates": { "type": "integer", "minimum": 100 },
+        "minimum_effective_blocks_for_archive": { "type": "integer", "minimum": 2 },
+        "confidence_level": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "required": ["accounting_unit", "screen", "full", "search_total_per_method", "final"]
+    },
+    "shared_search_controls": {
+      "type": "object",
+      "required": ["base_skill", "trace_store", "patch_pool", "verifier"]
+    },
+    "proposer": {
+      "type": "object",
+      "required": ["adapter", "require_trace_evidence", "require_parent_version"]
+    },
+    "methods": { "type": "object", "minProperties": 11 },
+    "ablations": { "type": "array", "minItems": 8 },
+    "metrics": {
+      "type": "object",
+      "required": ["primary", "frontier", "efficiency", "diagnostic"]
+    },
+    "selection_protocol": {
+      "type": "object",
+      "required": ["search_uses_final_splits", "working_archive", "scientific_front"]
+    },
+    "deployment": {
+      "type": "object",
+      "required": ["primary_policy", "policies", "never_tune_on_final_test"]
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["root", "experiment_id_strategy", "required_files"]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paretoskill.local/schemas/result.schema.json",
+  "title": "ParetoSkill task execution result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "candidate_id",
+    "content_hash",
+    "target_id",
+    "task_id",
+    "group_id",
+    "split",
+    "split_id",
+    "transfer_group",
+    "seed",
+    "result",
+    "cache_key",
+    "is_base"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "target_id": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "group_id": { "type": "string", "minLength": 1 },
+    "split": { "type": "string", "minLength": 1 },
+    "split_id": { "type": "string", "minLength": 1 },
+    "transfer_group": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
+    "seed": { "type": "integer" },
+    "cache_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "is_base": { "type": "boolean" },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correct",
+        "input_tokens",
+        "output_tokens",
+        "latency_ms",
+        "trace",
+        "provider_metadata"
+      ],
+      "properties": {
+        "correct": { "type": "boolean" },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "latency_ms": { "type": "number", "minimum": 0 },
+        "trace": { "type": "object" },
+        "provider_metadata": { "type": "object" }
+      }
+    }
+  }
+}
